@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Trainingsplan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --bg: #0d0d0f;
+  --surface: #18181c;
+  --surface2: #222228;
+  --surface3: #2c2c35;
+  --accent: #c8f135;
+  --accent2: #8bbb1a;
+  --text: #f0f0f0;
+  --muted: #6b6b7a;
+  --done: #1e2e08;
+  --done-border: #6da010;
+  --danger: #ff4d4d;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--surface);
+  padding: 52px 20px 14px;
+  border-bottom: 1px solid #2a2a33;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px; letter-spacing: 2px; color: var(--accent); line-height: 1;
+}
+.header-left p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.progress-ring-wrap { position: relative; width: 52px; height: 52px; }
+.progress-ring-wrap svg { transform: rotate(-90deg); }
+.progress-ring-bg { fill: none; stroke: var(--surface2); stroke-width: 4; }
+.progress-ring-bar { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .4s; }
+.progress-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--accent);
+}
+
+/* ── SCREENS ── */
+.screen { display: none; padding: 16px; padding-bottom: 110px; }
+.screen.active { display: block; }
+
+/* ── PHASE CARD ── */
+.phase-card {
+  background: var(--surface); border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; border: 1px solid #2a2a33;
+}
+.phase-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+.phase-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+
+/* ── EXERCISE LIST ITEM ── */
+.exercise-item {
+  background: var(--surface); border-radius: var(--radius); padding: 14px;
+  margin-bottom: 9px; border: 1px solid #2a2a33;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: border-color .2s, background .2s;
+  -webkit-user-select: none;
+}
+.exercise-item.done { background: var(--done); border-color: var(--done-border); }
+.ex-icon {
+  width: 42px; height: 42px; border-radius: 12px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.exercise-item.done .ex-icon { background: var(--done); }
+.ex-info { flex: 1; min-width: 0; }
+.ex-muscle { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+.ex-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.ex-sets-dots { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.set-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--surface2); border: 1.5px solid var(--muted); transition: all .2s; }
+.set-dot.done { background: var(--accent); border-color: var(--accent); }
+.ex-arrow { color: var(--muted); font-size: 18px; flex-shrink: 0; }
+.exercise-item.done .ex-arrow { color: var(--done-border); }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: var(--accent); color: #0d0d0f; border: none;
+  border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif;
+  font-size: 19px; letter-spacing: 2px; padding: 15px 20px; width: 100%;
+  cursor: pointer; transition: transform .1s, background .1s; margin-top: 10px;
+}
+.btn-primary:active { transform: scale(0.97); background: var(--accent2); }
+.btn-primary:disabled { background: var(--done-border); color: #0d0d0f; opacity: .7; }
+.btn-secondary {
+  background: var(--surface2); color: var(--text); border: 1px solid #3a3a45;
+  border-radius: var(--radius); font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 14px; padding: 12px 16px; width: 100%;
+  cursor: pointer; transition: background .15s; margin-top: 8px;
+}
+.btn-secondary:active { background: var(--surface3); }
+.btn-danger {
+  background: transparent; color: var(--danger); border: 1px solid var(--danger);
+  border-radius: var(--radius); font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 13px; padding: 10px 16px;
+  cursor: pointer; transition: background .15s; margin-top: 8px; width: 100%;
+}
+.btn-danger:active { background: rgba(255,77,77,.1); }
+
+/* ── DETAIL SCREEN ── */
+.detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.back-btn {
+  background: var(--surface); border: 1px solid #2a2a33; color: var(--text);
+  border-radius: 12px; width: 40px; height: 40px; min-width: 40px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer;
+}
+.detail-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; line-height: 1.1; }
+.detail-subtitle { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── INFO GRID ── */
+.detail-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.info-box {
+  background: var(--surface); border-radius: var(--radius); border: 1px solid #2a2a33; padding: 12px;
+}
+.info-box-label { font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.info-box-value { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent); margin-top: 1px; }
+.info-box-sub { font-size: 10px; color: var(--muted); }
+
+/* ── SECTION DIVIDER ── */
+.section-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1px;
+  color: var(--muted); margin: 18px 0 10px;
+}
+
+/* ── SETTINGS PANEL ── */
+.settings-panel {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid #2a2a33; padding: 16px; margin-bottom: 10px;
+}
+.settings-panel.collapsed .settings-body { display: none; }
+.settings-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; -webkit-user-select: none;
+}
+.settings-toggle-title {
+  font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;
+}
+.settings-toggle-arrow { color: var(--muted); font-size: 16px; transition: transform .2s; }
+.settings-panel:not(.collapsed) .settings-toggle-arrow { transform: rotate(90deg); }
+.settings-body { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+.setting-row { display: flex; flex-direction: column; gap: 4px; }
+.setting-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.setting-input {
+  background: var(--surface2); border: 1.5px solid #3a3a45; border-radius: 10px;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+  padding: 10px 12px; width: 100%; outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.setting-input:focus { border-color: var(--accent); }
+.setting-input.short { max-width: 100px; }
+.setting-row-inline { display: flex; gap: 8px; align-items: flex-end; }
+.setting-row-inline .setting-row { flex: 1; }
+
+/* ── NOTES BOX ── */
+.note-box {
+  background: var(--surface2); border-radius: 12px; padding: 12px 14px;
+  border-left: 3px solid var(--accent); font-size: 13px; color: #c0c0c0;
+  margin-bottom: 14px;
+}
+
+/* ── SET ROWS ── */
+.set-row {
+  background: var(--surface); border-radius: var(--radius); border: 1px solid #2a2a33;
+  padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all .2s; cursor: pointer;
+}
+.set-row.done-row { background: var(--done); border-color: var(--done-border); }
+.set-row.locked { opacity: 0.35; cursor: default; pointer-events: none; }
+.set-row-left { display: flex; align-items: center; gap: 12px; }
+.set-number { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--muted); width: 18px; flex-shrink: 0; }
+.set-row.done-row .set-number { color: var(--accent); }
+.set-label { font-size: 14px; font-weight: 500; }
+.set-sublabel { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.set-check-btn {
+  background: var(--surface2); border: 1.5px solid var(--muted); border-radius: 50%;
+  width: 34px; height: 34px; min-width: 34px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all .2s; flex-shrink: 0;
+}
+.set-row.done-row .set-check-btn { background: var(--accent); border-color: var(--accent); color: #0d0d0f; }
+
+/* ── WEIGHT BADGE ── */
+.weight-badge {
+  background: var(--surface2); border: 1px solid #3a3a45;
+  border-radius: 8px; padding: 2px 8px;
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  margin-left: 6px;
+}
+
+/* ── TIMER OVERLAY ── */
+.timer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.9); backdrop-filter: blur(12px);
+  z-index: 200; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+}
+.timer-overlay.active { display: flex; }
+.timer-label { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 3px; color: var(--muted); }
+.timer-circle { position: relative; width: 180px; height: 180px; }
+.timer-circle svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.timer-bg { fill: none; stroke: var(--surface); stroke-width: 8; }
+.timer-bar { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset .1s linear; }
+.timer-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 54px; color: var(--accent);
+}
+.timer-next { font-size: 13px; color: var(--muted); text-align: center; }
+.timer-next strong { color: var(--text); }
+.timer-skip {
+  background: var(--surface); border: 1px solid #2a2a33; color: var(--text);
+  border-radius: var(--radius); font-family: 'DM Sans', sans-serif;
+  font-weight: 500; font-size: 15px; padding: 12px 36px; cursor: pointer;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid #2a2a33;
+  display: flex; padding: 10px 0 28px; z-index: 100;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-size: 20px; transition: color .2s;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn span { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── HISTORY ── */
+.summary-card {
+  background: var(--surface); border-radius: var(--radius); border: 1px solid #2a2a33;
+  padding: 18px; margin-bottom: 10px;
+}
+.summary-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-bottom: 10px; color: var(--accent); }
+.stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 13px; }
+.stat-row:last-child { border-bottom: none; }
+.stat-val { color: var(--accent); font-weight: 600; }
+.empty-state { text-align: center; color: var(--muted); padding: 50px 20px; font-size: 14px; }
+.empty-state .big { font-size: 44px; margin-bottom: 12px; }
+.congrats-banner {
+  background: linear-gradient(135deg, #1a2e00, #2a4800);
+  border: 1px solid var(--done-border); border-radius: var(--radius);
+  padding: 22px; text-align: center; margin-bottom: 14px;
+}
+.congrats-banner .big { font-size: 40px; }
+.congrats-banner h2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: var(--accent); margin: 6px 0 3px; }
+.congrats-banner p { font-size: 12px; color: #a0c060; }
+
+/* ── GLOBAL SETTINGS SCREEN ── */
+.global-setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #222; }
+.global-setting-row:last-child { border-bottom: none; }
+.global-setting-label { font-size: 14px; font-weight: 500; }
+.global-setting-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.global-setting-value {
+  background: var(--surface2); border: 1.5px solid #3a3a45; border-radius: 10px;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+  padding: 8px 10px; width: 80px; text-align: center; outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.global-setting-value:focus { border-color: var(--accent); }
+
+.new-workout-btn {
+  background: transparent; color: var(--accent); border: 1.5px solid var(--accent);
+  border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 2px; padding: 14px 20px; width: 100%;
+  cursor: pointer; margin-top: 6px;
+}
+
+/* ── CHIP ── */
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chip {
+  background: var(--surface2); border: 1.5px solid #3a3a45; border-radius: 20px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .15s; color: var(--muted);
+}
+.chip.selected { background: var(--accent); border-color: var(--accent); color: #0d0d0f; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-left">
+    <h1>TRAININGSPLAN</h1>
+    <p id="header-sub">fair fitness · Trainer: Levin</p>
+  </div>
+  <div class="progress-ring-wrap">
+    <svg width="52" height="52" viewBox="0 0 52 52">
+      <circle class="progress-ring-bg" cx="26" cy="26" r="22"/>
+      <circle class="progress-ring-bar" id="progressBar" cx="26" cy="26" r="22"
+        stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
+    </svg>
+    <div class="progress-text" id="progressText">0%</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     WORKOUT SCREEN
+═══════════════════════════════════════════ -->
+<div id="screen-workout" class="screen active">
+  <!-- dynamically generated -->
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DETAIL SCREEN
+═══════════════════════════════════════════ -->
+<div id="screen-detail" class="screen">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goBack()">‹</button>
+    <div style="flex:1;min-width:0">
+      <div class="detail-title" id="d-name"></div>
+      <div class="detail-subtitle" id="d-muscle"></div>
+    </div>
+  </div>
+
+  <!-- Info boxes -->
+  <div class="detail-info-grid" id="d-info-grid"></div>
+
+  <!-- Notes -->
+  <div class="note-box" id="d-note" style="display:none"></div>
+
+  <!-- Settings panel (collapsible) -->
+  <div class="settings-panel collapsed" id="settingsPanel">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <div class="settings-toggle-title">⚙️ Einstellungen anpassen</div>
+      <div class="settings-toggle-arrow">›</div>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <!-- dynamically filled -->
+    </div>
+  </div>
+
+  <!-- Sets -->
+  <div class="section-label">SÄTZE</div>
+  <div id="d-sets-container"></div>
+
+  <button class="btn-primary" id="d-done-btn" onclick="markExDone()">ÜBUNG ABSCHLIESSEN ✓</button>
+  <button class="btn-secondary" id="d-undo-btn" onclick="undoExDone()" style="display:none">↩ Rückgängig</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     EINSTELLUNGEN SCREEN (global)
+═══════════════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+  <div class="section-label">ALLGEMEIN</div>
+  <div class="summary-card">
+    <div class="global-setting-row">
+      <div>
+        <div class="global-setting-label">Pausenzeit (Sekunden)</div>
+        <div class="global-setting-sub">Standard-Pause zwischen Sätzen</div>
+      </div>
+      <input class="global-setting-value" id="gs-pause" type="number" min="10" max="300" value="75"
+        onchange="saveGlobalSetting('pauseSecs', this.value)">
+    </div>
+    <div class="global-setting-row">
+      <div>
+        <div class="global-setting-label">Trainer</div>
+        <div class="global-setting-sub">Wird in der Kopfzeile angezeigt</div>
+      </div>
+      <input class="global-setting-value" id="gs-trainer" type="text" value="Levin" style="width:110px;text-align:left"
+        onchange="saveGlobalSetting('trainer', this.value); updateHeader()">
+    </div>
+  </div>
+
+  <div class="section-label">ÜBUNGEN VERWALTEN</div>
+  <div id="ex-settings-list"></div>
+
+  <div class="section-label">WORKOUT</div>
+  <div class="summary-card" style="padding:12px 16px">
+    <button class="new-workout-btn" onclick="newWorkout()">⟳ NEUES WORKOUT STARTEN</button>
+    <button class="btn-danger" onclick="confirmResetAll()">Alle Daten löschen</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     VERLAUF SCREEN
+═══════════════════════════════════════════ -->
+<div id="screen-history" class="screen">
+  <div id="history-content"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TIMER OVERLAY
+═══════════════════════════════════════════ -->
+<div class="timer-overlay" id="timerOverlay">
+  <div class="timer-label">PAUSE · NÄCHSTER SATZ IN</div>
+  <div class="timer-circle">
+    <svg viewBox="0 0 180 180">
+      <circle class="timer-bg" cx="90" cy="90" r="80"/>
+      <circle class="timer-bar" id="timerBar" cx="90" cy="90" r="80"
+        stroke-dasharray="502.65" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-num" id="timerNum">75</div>
+  </div>
+  <div class="timer-next" id="timerNext"></div>
+  <button class="timer-skip" onclick="skipTimer()">Überspringen</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     BOTTOM NAV
+═══════════════════════════════════════════ -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-workout" onclick="showScreen('workout')">
+    <span>🏋️</span><span>Training</span>
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
+    <span>⚙️</span><span>Einstellungen</span>
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showScreen('history')">
+    <span>📋</span><span>Verlauf</span>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+// ─────────────────────────────────────────────
+// DEFAULT EXERCISE DATA
+// ─────────────────────────────────────────────
+const DEFAULT_EXERCISES = [
+  {
+    id: 'warmup', icon: '🏃', muscle: 'Cardio', name: 'Laufband',
+    reps: '', sets: 1, sithoehe: '', kg: '', pauseSecs: 0,
+    note: '', isWarmup: true, durationMin: '5-10'
+  },
+  {
+    id: 0, icon: '🦵', muscle: 'Beine', name: 'Leg Press',
+    reps: '8-12', sets: 3, sithoehe: '3', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 1, icon: '🦵', muscle: 'Beine', name: 'Prone Leg Curl',
+    reps: '8-12', sets: 3, sithoehe: '', kg: '', pauseSecs: null,
+    note: 'Hebel 1 · Fuß 4'
+  },
+  {
+    id: 2, icon: '🔙', muscle: 'Rücken', name: 'Lat Zug',
+    reps: '8-12', sets: 3, sithoehe: '2', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 3, icon: '🔙', muscle: 'Rücken', name: 'Low Row',
+    reps: '8-12', sets: 4, sithoehe: '8', kg: '', pauseSecs: null,
+    note: 'Brust: Einstellung 9'
+  },
+  {
+    id: 4, icon: '🫁', muscle: 'Brust', name: 'Chest Press',
+    reps: '8-12', sets: 4, sithoehe: '8', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 5, icon: '💪', muscle: 'Schulter', name: 'Shoulder Press',
+    reps: '8-12', sets: 4, sithoehe: '7', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 6, icon: '💪', muscle: 'Bizeps', name: 'Arm Curl',
+    reps: '8-12', sets: 4, sithoehe: '7', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 7, icon: '💪', muscle: 'Trizeps', name: 'Arm Extension',
+    reps: '8-12', sets: 4, sithoehe: '7', kg: '', pauseSecs: null,
+    note: ''
+  },
+  {
+    id: 8, icon: '🔥', muscle: 'Bauch', name: 'Abd. Crunches',
+    reps: '8-12', sets: 4, sithoehe: '', kg: '', pauseSecs: null,
+    note: ''
+  }
+];
+
+// ─────────────────────────────────────────────
+// STATE – load everything from localStorage
+// ─────────────────────────────────────────────
+function loadState() {
+  const saved = localStorage.getItem('tp_state');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      // Merge exercises: use saved settings but keep structure from defaults
+      const exMap = {};
+      (parsed.exercises || []).forEach(e => { exMap[e.id] = e; });
+      parsed.exercises = DEFAULT_EXERCISES.map(def => {
+        const s = exMap[def.id];
+        if (!s) return { ...def };
+        // merge: saved settings override defaults, keep isWarmup/id/icon
+        return { ...def, ...s, id: def.id, icon: def.icon, isWarmup: def.isWarmup };
+      });
+      // doneExercises: saved as array
+      parsed.doneExercises = new Set(parsed.doneExercisesArr || []);
+      delete parsed.doneExercisesArr;
+      return parsed;
+    } catch(e) {}
+  }
+  return {
+    exercises: DEFAULT_EXERCISES.map(e => ({...e})),
+    completedSets: {},
+    doneExercises: new Set(),
+    currentExId: null,
+    globalPauseSecs: 75,
+    trainer: 'Levin',
+    history: []
+  };
+}
+
+function saveState() {
+  const toSave = {
+    exercises: state.exercises,
+    completedSets: state.completedSets,
+    doneExercisesArr: [...state.doneExercises],
+    currentExId: state.currentExId,
+    globalPauseSecs: state.globalPauseSecs,
+    trainer: state.trainer,
+    history: state.history
+  };
+  localStorage.setItem('tp_state', JSON.stringify(toSave));
+}
+
+let state = loadState();
+
+// Init completedSets for any exercise not yet tracked
+state.exercises.forEach(e => {
+  if (!(e.id in state.completedSets)) state.completedSets[e.id] = 0;
+});
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function hasExDone(id) { return state.doneExercises.has(String(id)); }
+function addExDone(id) { state.doneExercises.add(String(id)); }
+function delExDone(id) { state.doneExercises.delete(String(id)); }
+function getSets(id) { return state.completedSets[String(id)] || 0; }
+function setSets(id, n) { state.completedSets[String(id)] = n; }
+function getEx(id) { return state.exercises.find(e => String(e.id) === String(id)); }
+
+function pauseForEx(ex) {
+  if (ex.pauseSecs !== null && ex.pauseSecs !== undefined && ex.pauseSecs !== '') {
+    return parseInt(ex.pauseSecs) || state.globalPauseSecs;
+  }
+  return state.globalPauseSecs;
+}
+
+function metaString(ex) {
+  if (ex.isWarmup) return ex.durationMin + ' Minuten';
+  let parts = [];
+  if (ex.reps) parts.push(ex.reps + ' Wdh.');
+  if (ex.sets) parts.push(ex.sets + ' Sätze');
+  if (ex.sithoehe) parts.push('Sitzhöhe ' + ex.sithoehe);
+  if (ex.kg) parts.push(ex.kg + ' kg');
+  return parts.join(' · ');
+}
+
+// ─────────────────────────────────────────────
+// WORKOUT SCREEN
+// ─────────────────────────────────────────────
+function renderWorkoutScreen() {
+  const screen = document.getElementById('screen-workout');
+  let html = '';
+
+  // Warm up
+  html += `<div class="phase-card"><div class="phase-label">Phase 1</div><div class="phase-title">🏃 WARM UP</div></div>`;
+  const wu = getEx('warmup');
+  html += exerciseItemHTML(wu);
+
+  // Kraft
+  html += `<div class="phase-card" style="margin-top:8px"><div class="phase-label">Phase 2</div><div class="phase-title">💪 KRAFT · PAUSE ${state.globalPauseSecs} SEK</div></div>`;
+  state.exercises.filter(e => !e.isWarmup).forEach(ex => {
+    html += exerciseItemHTML(ex);
+  });
+
+  screen.innerHTML = html;
+  updateProgress();
+}
+
+function exerciseItemHTML(ex) {
+  const isDone = hasExDone(ex.id);
+  const doneSets = getSets(ex.id);
+  let dots = '';
+  if (!ex.isWarmup) {
+    for (let i = 0; i < ex.sets; i++) {
+      dots += `<div class="set-dot ${i < doneSets ? 'done' : ''}"></div>`;
+    }
+  }
+  const idAttr = typeof ex.id === 'string' ? ex.id : ex.id;
+  return `<div class="exercise-item ${isDone ? 'done' : ''}" onclick="openDetail('${idAttr}')" data-exid="${idAttr}">
+    <div class="ex-icon">${ex.icon}</div>
+    <div class="ex-info">
+      <div class="ex-muscle">${ex.muscle}</div>
+      <div class="ex-name">${ex.name}</div>
+      <div class="ex-meta">${metaString(ex)}</div>
+      ${!ex.isWarmup ? `<div class="ex-sets-dots">${dots}</div>` : ''}
+    </div>
+    <div class="ex-arrow">${isDone ? '✓' : '›'}</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// PROGRESS
+// ─────────────────────────────────────────────
+function updateProgress() {
+  const total = state.exercises.length;
+  const done = state.doneExercises.size;
+  const pct = Math.round((done / total) * 100);
+  const circ = 138.2;
+  document.getElementById('progressBar').style.strokeDashoffset = circ - (circ * pct / 100);
+  document.getElementById('progressText').textContent = pct + '%';
+}
+
+// ─────────────────────────────────────────────
+// SCREEN NAV
+// ─────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  if (name === 'workout') renderWorkoutScreen();
+  if (name === 'settings') renderSettingsScreen();
+  if (name === 'history') renderHistory();
+}
+
+// ─────────────────────────────────────────────
+// DETAIL SCREEN
+// ─────────────────────────────────────────────
+function openDetail(id) {
+  state.currentExId = id;
+  const ex = getEx(id);
+
+  document.getElementById('d-name').textContent = ex.name;
+  document.getElementById('d-muscle').textContent = ex.muscle + (ex.isWarmup ? ' – Aufwärmen' : ' – Kraftübung');
+
+  // Info grid
+  const grid = document.getElementById('d-info-grid');
+  if (ex.isWarmup) {
+    grid.innerHTML = `<div class="info-box" style="grid-column:1/-1">
+      <div class="info-box-label">Dauer</div>
+      <div class="info-box-value">${ex.durationMin || '5-10'}</div>
+      <div class="info-box-sub">Minuten</div>
+    </div>`;
+  } else {
+    let h = `
+      <div class="info-box">
+        <div class="info-box-label">Wiederholungen</div>
+        <div class="info-box-value">${ex.reps || '–'}</div>
+        <div class="info-box-sub">pro Satz</div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-label">Sätze</div>
+        <div class="info-box-value">${ex.sets}</div>
+        <div class="info-box-sub">gesamt</div>
+      </div>`;
+    if (ex.sithoehe) h += `<div class="info-box">
+      <div class="info-box-label">Sitzhöhe</div>
+      <div class="info-box-value">${ex.sithoehe}</div>
+      <div class="info-box-sub">Einstellung</div>
+    </div>`;
+    if (ex.kg) h += `<div class="info-box">
+      <div class="info-box-label">Gewicht</div>
+      <div class="info-box-value">${ex.kg}</div>
+      <div class="info-box-sub">kg</div>
+    </div>`;
+    h += `<div class="info-box">
+      <div class="info-box-label">Pause</div>
+      <div class="info-box-value">${pauseForEx(ex)}</div>
+      <div class="info-box-sub">Sekunden</div>
+    </div>`;
+    grid.innerHTML = h;
+  }
+
+  // Note
+  const noteEl = document.getElementById('d-note');
+  if (ex.note) { noteEl.textContent = '⚙️  ' + ex.note; noteEl.style.display = 'block'; }
+  else { noteEl.style.display = 'none'; }
+
+  // Settings panel
+  renderDetailSettings(ex);
+
+  // Sets
+  renderSetRows(ex);
+
+  // Buttons
+  const btn = document.getElementById('d-done-btn');
+  const undoBtn = document.getElementById('d-undo-btn');
+  if (hasExDone(id)) {
+    btn.textContent = '✓ ABGESCHLOSSEN';
+    btn.disabled = true;
+    undoBtn.style.display = 'block';
+  } else {
+    btn.textContent = 'ÜBUNG ABSCHLIESSEN ✓';
+    btn.disabled = false;
+    undoBtn.style.display = 'none';
+  }
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-detail').classList.add('active');
+  // Collapse settings panel when opening
+  document.getElementById('settingsPanel').classList.add('collapsed');
+}
+
+function renderDetailSettings(ex) {
+  const body = document.getElementById('settingsBody');
+  if (ex.isWarmup) {
+    body.innerHTML = `
+      <div class="setting-row">
+        <div class="setting-label">Dauer (Minuten)</div>
+        <input class="setting-input" type="text" value="${ex.durationMin || '5-10'}"
+          oninput="updateExField('durationMin', this.value); refreshDetailInfo()">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Notiz</div>
+        <input class="setting-input" type="text" placeholder="z.B. Steigung 2%" value="${ex.note || ''}"
+          oninput="updateExField('note', this.value); refreshDetailNote()">
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="setting-row-inline">
+      <div class="setting-row">
+        <div class="setting-label">Wiederholungen</div>
+        <input class="setting-input" type="text" placeholder="z.B. 8-12" value="${ex.reps || ''}"
+          oninput="updateExField('reps', this.value); refreshDetailInfo()">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Sätze</div>
+        <input class="setting-input short" type="number" min="1" max="20" value="${ex.sets}"
+          oninput="updateExField('sets', parseInt(this.value)||1); refreshDetailInfo(); renderSetRows(getEx(state.currentExId))">
+      </div>
+    </div>
+    <div class="setting-row-inline">
+      <div class="setting-row">
+        <div class="setting-label">Sitzhöhe</div>
+        <input class="setting-input" type="text" placeholder="z.B. 3" value="${ex.sithoehe || ''}"
+          oninput="updateExField('sithoehe', this.value); refreshDetailInfo()">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Gewicht (kg)</div>
+        <input class="setting-input" type="text" placeholder="z.B. 40" value="${ex.kg || ''}"
+          oninput="updateExField('kg', this.value); refreshDetailInfo()">
+      </div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Pause (Sek.) – leer = Standard (${state.globalPauseSecs}s)</div>
+      <input class="setting-input" type="number" min="5" max="600"
+        placeholder="${state.globalPauseSecs}" value="${ex.pauseSecs !== null && ex.pauseSecs !== undefined && ex.pauseSecs !== '' ? ex.pauseSecs : ''}"
+        oninput="updateExField('pauseSecs', this.value === '' ? null : parseInt(this.value)); refreshDetailInfo()">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Notiz / Geräteinstellung</div>
+      <input class="setting-input" type="text" placeholder="z.B. Hebel 1, Fuß 4" value="${ex.note || ''}"
+        oninput="updateExField('note', this.value); refreshDetailNote()">
+    </div>`;
+}
+
+function updateExField(field, value) {
+  const ex = getEx(state.currentExId);
+  ex[field] = value;
+  saveState();
+}
+
+function refreshDetailInfo() {
+  const ex = getEx(state.currentExId);
+  openDetail(ex.id); // full re-render keeps settings open
+  // But we want to keep settings open
+  document.getElementById('settingsPanel').classList.remove('collapsed');
+}
+
+function refreshDetailNote() {
+  const ex = getEx(state.currentExId);
+  const noteEl = document.getElementById('d-note');
+  if (ex.note) { noteEl.textContent = '⚙️  ' + ex.note; noteEl.style.display = 'block'; }
+  else { noteEl.style.display = 'none'; }
+  saveState();
+}
+
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('collapsed');
+}
+
+function renderSetRows(ex) {
+  const cont = document.getElementById('d-sets-container');
+  const done = getSets(ex.id);
+
+  if (ex.isWarmup) {
+    const isDone = hasExDone(ex.id);
+    cont.innerHTML = `<div class="set-row ${isDone ? 'done-row' : ''}" onclick="completeWarmupSet()">
+      <div class="set-row-left">
+        <div class="set-number">✓</div>
+        <div><div class="set-label">${ex.durationMin || '5-10'} Minuten laufen</div></div>
+      </div>
+      <div class="set-check-btn">${isDone ? '✓' : '○'}</div>
+    </div>`;
+    return;
+  }
+
+  let h = '';
+  for (let i = 1; i <= ex.sets; i++) {
+    const isDone = i <= done;
+    const isNext = i === done + 1;
+    const isLocked = i > done + 1;
+    const kgLabel = ex.kg ? `<span class="weight-badge">${ex.kg} kg</span>` : '';
+    h += `<div class="set-row ${isDone ? 'done-row' : ''} ${isLocked ? 'locked' : ''}"
+      id="setrow-${ex.id}-${i}" onclick="${isLocked ? '' : `completeSet('${ex.id}',${i})`}">
+      <div class="set-row-left">
+        <div class="set-number">${i}</div>
+        <div>
+          <div class="set-label">Satz ${i} · ${ex.reps || '–'} Wdh.${kgLabel}</div>
+          ${ex.sithoehe ? `<div class="set-sublabel">Sitzhöhe ${ex.sithoehe}</div>` : ''}
+        </div>
+      </div>
+      <div class="set-check-btn">${isDone ? '✓' : (isNext ? '▶' : '○')}</div>
+    </div>`;
+  }
+  cont.innerHTML = h;
+}
+
+function goBack() {
+  showScreen('workout');
+}
+
+// ─────────────────────────────────────────────
+// SET / EXERCISE COMPLETION
+// ─────────────────────────────────────────────
+function completeWarmupSet() {
+  if (hasExDone('warmup')) return;
+  addExDone('warmup');
+  setSets('warmup', 1);
+  saveState();
+  updateProgress();
+  openDetail('warmup');
+}
+
+function completeSet(id, setNum) {
+  const done = getSets(id);
+  if (setNum !== done + 1) return;
+  setSets(id, setNum);
+  saveState();
+
+  const ex = getEx(id);
+  // Refresh rows
+  for (let i = 1; i <= ex.sets; i++) {
+    const row = document.getElementById('setrow-' + id + '-' + i);
+    if (!row) continue;
+    const isDone = i <= setNum;
+    const isNext = i === setNum + 1;
+    const isLocked = i > setNum + 1;
+    row.className = 'set-row' + (isDone ? ' done-row' : '') + (isLocked ? ' locked' : '');
+    row.querySelector('.set-check-btn').textContent = isDone ? '✓' : (isNext ? '▶' : '○');
+    if (!isLocked && !isDone) row.onclick = () => completeSet(id, i);
+    else if (isDone) row.onclick = null;
+  }
+
+  updateProgress();
+
+  if (setNum < ex.sets) {
+    document.getElementById('timerNext').innerHTML =
+      `Satz <strong>${setNum + 1} von ${ex.sets}</strong> · ${ex.reps} Wdh.`;
+    startTimer(pauseForEx(ex));
+  }
+}
+
+function markExDone() {
+  const id = state.currentExId;
+  addExDone(id);
+  saveState();
+  updateProgress();
+  openDetail(id);
+  if (state.doneExercises.size === state.exercises.length) saveWorkout();
+}
+
+function undoExDone() {
+  const id = state.currentExId;
+  delExDone(id);
+  setSets(id, 0);
+  saveState();
+  updateProgress();
+  openDetail(id);
+}
+
+// ─────────────────────────────────────────────
+// TIMER
+// ─────────────────────────────────────────────
+let timerInterval = null;
+function startTimer(secs) {
+  clearInterval(timerInterval);
+  let remaining = secs;
+  const circ = 502.65;
+  const overlay = document.getElementById('timerOverlay');
+  const bar = document.getElementById('timerBar');
+  const num = document.getElementById('timerNum');
+  overlay.classList.add('active');
+  num.textContent = remaining;
+  bar.style.strokeDashoffset = 0;
+  timerInterval = setInterval(() => {
+    remaining--;
+    num.textContent = remaining;
+    bar.style.strokeDashoffset = circ * (1 - remaining / secs);
+    if (remaining <= 0) { clearInterval(timerInterval); overlay.classList.remove('active'); }
+  }, 1000);
+}
+function skipTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timerOverlay').classList.remove('active');
+}
+
+// ─────────────────────────────────────────────
+// GLOBAL SETTINGS SCREEN
+// ─────────────────────────────────────────────
+function renderSettingsScreen() {
+  // Update global inputs
+  document.getElementById('gs-pause').value = state.globalPauseSecs;
+  document.getElementById('gs-trainer').value = state.trainer;
+
+  // Per-exercise cards
+  const list = document.getElementById('ex-settings-list');
+  let html = '';
+  state.exercises.forEach(ex => {
+    html += `<div class="summary-card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:20px">${ex.icon}</span>
+        <div>
+          <div style="font-weight:600;font-size:15px">${ex.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${ex.muscle}</div>
+        </div>
+      </div>`;
+    if (ex.isWarmup) {
+      html += `<div class="setting-row" style="margin-bottom:8px">
+        <div class="setting-label">Dauer (Minuten)</div>
+        <input class="setting-input" type="text" value="${ex.durationMin || '5-10'}"
+          onchange="updateExFieldGlobal('${ex.id}','durationMin',this.value)">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Notiz</div>
+        <input class="setting-input" type="text" value="${ex.note || ''}" placeholder="z.B. Steigung 2%"
+          onchange="updateExFieldGlobal('${ex.id}','note',this.value)">
+      </div>`;
+    } else {
+      html += `
+      <div class="setting-row-inline" style="margin-bottom:8px">
+        <div class="setting-row">
+          <div class="setting-label">Wiederholungen</div>
+          <input class="setting-input" type="text" value="${ex.reps || ''}" placeholder="8-12"
+            onchange="updateExFieldGlobal(${ex.id},'reps',this.value)">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Sätze</div>
+          <input class="setting-input short" type="number" min="1" max="20" value="${ex.sets}"
+            onchange="updateExFieldGlobal(${ex.id},'sets',parseInt(this.value)||1)">
+        </div>
+      </div>
+      <div class="setting-row-inline" style="margin-bottom:8px">
+        <div class="setting-row">
+          <div class="setting-label">Sitzhöhe</div>
+          <input class="setting-input" type="text" value="${ex.sithoehe || ''}" placeholder="z.B. 3"
+            onchange="updateExFieldGlobal(${ex.id},'sithoehe',this.value)">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Gewicht (kg)</div>
+          <input class="setting-input" type="text" value="${ex.kg || ''}" placeholder="z.B. 40"
+            onchange="updateExFieldGlobal(${ex.id},'kg',this.value)">
+        </div>
+      </div>
+      <div class="setting-row-inline" style="margin-bottom:8px">
+        <div class="setting-row">
+          <div class="setting-label">Pause (Sek., leer = Standard)</div>
+          <input class="setting-input" type="number" min="5" max="600"
+            placeholder="${state.globalPauseSecs}"
+            value="${ex.pauseSecs !== null && ex.pauseSecs !== undefined && ex.pauseSecs !== '' ? ex.pauseSecs : ''}"
+            onchange="updateExFieldGlobal(${ex.id},'pauseSecs',this.value===''?null:parseInt(this.value))">
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Notiz / Geräteinstellung</div>
+        <input class="setting-input" type="text" value="${ex.note || ''}" placeholder="z.B. Hebel 1, Fuß 4"
+          onchange="updateExFieldGlobal(${ex.id},'note',this.value)">
+      </div>`;
+    }
+    html += `</div>`;
+  });
+  list.innerHTML = html;
+}
+
+function updateExFieldGlobal(id, field, value) {
+  const ex = state.exercises.find(e => String(e.id) === String(id));
+  if (ex) { ex[field] = value; saveState(); }
+}
+
+function saveGlobalSetting(key, value) {
+  if (key === 'pauseSecs') state.globalPauseSecs = parseInt(value) || 75;
+  if (key === 'trainer') state.trainer = value;
+  saveState();
+  updateHeader();
+}
+
+function updateHeader() {
+  document.getElementById('header-sub').textContent = 'fair fitness · Trainer: ' + state.trainer;
+}
+
+// ─────────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────────
+function saveWorkout() {
+  const entry = {
+    date: new Date().toLocaleDateString('de-DE'),
+    time: new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}),
+    sets: Object.values(state.completedSets).reduce((a,b)=>a+b,0),
+    exercises: state.exercises.length
+  };
+  state.history.unshift(entry);
+  saveState();
+}
+
+function renderHistory() {
+  const cont = document.getElementById('history-content');
+  const allDone = state.doneExercises.size === state.exercises.length;
+  let html = '';
+  if (allDone) {
+    html += `<div class="congrats-banner">
+      <div class="big">🏆</div>
+      <h2>WORKOUT ABGESCHLOSSEN!</h2>
+      <p>Stark gemacht – der Körper dankt es dir.</p>
+    </div>`;
+  }
+  if (!state.history.length && !allDone) {
+    cont.innerHTML = `<div class="empty-state"><div class="big">📋</div>Noch kein Training abgeschlossen.<br>Los geht's!</div>`;
+    return;
+  }
+  state.history.forEach(h => {
+    html += `<div class="summary-card">
+      <div class="summary-title">Training · ${h.date}</div>
+      <div class="stat-row"><span>Uhrzeit</span><span class="stat-val">${h.time}</span></div>
+      <div class="stat-row"><span>Übungen</span><span class="stat-val">${h.exercises || state.exercises.length}</span></div>
+      <div class="stat-row"><span>Sätze gesamt</span><span class="stat-val">${h.sets}</span></div>
+    </div>`;
+  });
+  cont.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// NEW WORKOUT / RESET
+// ─────────────────────────────────────────────
+function newWorkout() {
+  if (!confirm('Aktuellen Trainingsfortschritt zurücksetzen und neues Workout starten?')) return;
+  state.completedSets = {};
+  state.doneExercises = new Set();
+  state.exercises.forEach(e => { state.completedSets[e.id] = 0; });
+  saveState();
+  showScreen('workout');
+}
+
+function confirmResetAll() {
+  if (!confirm('Wirklich ALLE Daten löschen? (Einstellungen, Verlauf, Fortschritt)')) return;
+  localStorage.removeItem('tp_state');
+  location.reload();
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+updateHeader();
+renderWorkoutScreen();
+</script>
+</body>
+</html>
