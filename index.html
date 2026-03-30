@@ -404,7 +404,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       </div>
     </div>
     <div class="s-row-2">
-      <div class="s-row"><div class="s-lbl" data-i="field.muscle"></div><input class="s-inp" id="gex-muscle" type="text"></div>
+      <div class="s-row"><div class="s-lbl" data-i="field.muscle"></div><div id="gex-muscle-wrap"></div></div>
       <div class="s-row"><div class="s-lbl" data-i="field.name"></div><input class="s-inp" id="gex-name" type="text"></div>
     </div>
     <div id="gex-reps-fields">
@@ -548,6 +548,7 @@ const T = {
     'workout.end.confirm':'Training wirklich beenden? Der Fortschritt wird im Verlauf gespeichert.',
     'workout.end.new':'Neues Training starten',
     'workout.abort':'Training abbrechen','workout.abort.confirm':'Training wirklich abbrechen? Fortschritt geht verloren.',
+    'next.exercise':'Nächste Übung',
   },
   en: {
     'nav.workout':'Workout','nav.settings':'Settings','nav.history':'History',
@@ -612,6 +613,7 @@ const T = {
     'workout.end.confirm':'Really finish workout? Progress will be saved to history.',
     'workout.end.new':'Start new workout',
     'workout.abort':'Abort workout','workout.abort.confirm':'Really abort workout? Progress will be lost.',
+    'next.exercise':'Next exercise',
   }
 };
 function t(key){ return (T[lang]||T.de)[key] || (T.de)[key] || key; }
@@ -621,6 +623,14 @@ function t(key){ return (T[lang]||T.de)[key] || (T.de)[key] || key; }
 // ══════════════════════════════════════════════
 const ICONS = ['🏃','🦵','🔙','🫁','💪','🔥','🏋️','⚡','🎯','🦾','🤸','🧘','🚴','🏊','⛹️','🎽','🧗','🤼','🥊','🤾'];
 const PHASE_COLORS = 5;
+
+const MUSCLE_GROUPS_DE = ['Bauch','Beine','Bizeps','Brust','Cardio','Gesäß','Nacken','Rücken','Schulter','Trizeps','Unterarme','Waden','Ganzkörper'];
+const MUSCLE_GROUPS_EN = ['Abs','Legs','Biceps','Chest','Cardio','Glutes','Neck','Back','Shoulders','Triceps','Forearms','Calves','Full Body'];
+function muscleGroups(){ return lang==='en' ? MUSCLE_GROUPS_EN : MUSCLE_GROUPS_DE; }
+function muscleSelectHTML(id, currentVal){
+  const opts = muscleGroups().map(m=>`<option value="${m}" ${m===currentVal?'selected':''}>${m}</option>`).join('');
+  return `<select class="s-inp" id="${id}"><option value="" ${!currentVal?'selected':''}>–</option>${opts}</select>`;
+}
 
 // ══════════════════════════════════════════════
 // STATE
@@ -632,7 +642,7 @@ function defaultPlan(){
   return { id:uid(), name:'Mein Plan',
     phases:[{id:p1,name:'Warm Up',colorIdx:0},{id:p2,name:'Kraft',colorIdx:1}],
     exercises:[
-      {id:uid(),icon:'🏃',muscle:'Cardio',name:'Laufband',type:'time',durationMin:'5-10',sets:1,reps:'',sithoehe:'',kg:'',pauseSecs:null,note:'',phaseId:p1},
+      {id:uid(),icon:'🏃',muscle:'Cardio',name:'Laufband',type:'time',durationMin:'5',sets:1,reps:'',sithoehe:'',kg:'',pauseSecs:null,note:'',phaseId:p1},
       {id:uid(),icon:'🦵',muscle:'Beine',name:'Leg Press',type:'reps',reps:'8-12',sets:3,sithoehe:'3',kg:'',pauseSecs:null,note:'',phaseId:p2},
       {id:uid(),icon:'🦵',muscle:'Beine',name:'Prone Leg Curl',type:'reps',reps:'8-12',sets:3,sithoehe:'',kg:'',pauseSecs:null,note:'Hebel 1 · Fuß 4',phaseId:p2},
       {id:uid(),icon:'🔙',muscle:'Rücken',name:'Lat Zug',type:'reps',reps:'8-12',sets:3,sithoehe:'2',kg:'',pauseSecs:null,note:'',phaseId:p2},
@@ -725,7 +735,7 @@ function unsetDone(exId){ const p=getProg(state.activePlanId); p.doneExercises=p
 function pauseFor(ex){ return (ex.pauseSecs!=null&&ex.pauseSecs!=='')? parseInt(ex.pauseSecs):state.globalPauseSecs; }
 function fmtTime(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function metaStr(ex){
-  if(ex.type==='time') return (ex.durationMin||'5-10')+' '+t('min.abbr');
+  if(ex.type==='time') return (ex.durationMin||'5')+' '+t('min.abbr');
   const p=[]; if(ex.reps) p.push(ex.reps+' '+t('reps.abbr')); p.push(ex.sets+' '+t('field.sets'));
   if(ex.sithoehe) p.push(t('seatheight.abbr')+' '+ex.sithoehe); if(ex.kg) p.push(ex.kg+' kg');
   return p.join(' · ');
@@ -935,7 +945,7 @@ function openDetail(exId){
   document.getElementById('d-muscle').textContent=ex.muscle+' – '+(ex.type==='time'?t('time-ex'):t('strength-ex'));
   const grid=document.getElementById('d-info');
   if(ex.type==='time'){
-    grid.innerHTML=`<div class="info-box" style="grid-column:1/-1"><div class="ib-label">${t('field.duration')}</div><div class="ib-val">${ex.durationMin||'5-10'}</div><div class="ib-sub">${t('min.abbr')}</div></div>`;
+    grid.innerHTML=`<div class="info-box" style="grid-column:1/-1"><div class="ib-label">${t('field.duration')}</div><div class="ib-val">${ex.durationMin||'5'}</div><div class="ib-sub">${t('min.abbr')}</div></div>`;
   } else {
     let h=`<div class="info-box"><div class="ib-label">${t('field.reps')}</div><div class="ib-val">${ex.reps||'–'}</div><div class="ib-sub">${t('reps.abbr')}</div></div>
       <div class="info-box"><div class="ib-label">${t('field.sets')}</div><div class="ib-val">${ex.sets}</div><div class="ib-sub">${t('field.sets').toLowerCase()}</div></div>`;
@@ -976,7 +986,7 @@ function renderSetRows(ex){
         <button class="et-btn reset" onclick="etReset(${durSecs})">↺</button>
       </div></div>
       <div class="set-row ${d?'done-row':''}" onclick="completeTimeEx()">
-        <div class="sr-left"><div class="sr-num">✓</div><div><div class="sr-label">${ex.durationMin||'5-10'} ${t('completed.min')}</div></div></div>
+        <div class="sr-left"><div class="sr-num">✓</div><div><div class="sr-label">${ex.durationMin||'5'} ${t('completed.min')}</div></div></div>
         <div class="chk">${d?'✓':'○'}</div>
       </div>`;
     return;
@@ -1027,7 +1037,45 @@ function completeSet(exId,setNum){
   updateProgress();
   if(setNum<ex.sets){ document.getElementById('tovNext').innerHTML=`${t('set')} <strong>${setNum+1}/${ex.sets}</strong>`; startPauseTimer(pauseFor(ex)); }
 }
-function markExDone(){ setDone(currentExId);saveState();updateProgress();openDetail(currentExId); }
+function markExDone(){
+  setDone(currentExId); saveState(); updateProgress();
+  // Find next undone exercise in the current plan
+  const plan = activePlan();
+  const allIds = plan.exercises.map(e=>e.id);
+  const currentIdx = allIds.indexOf(currentExId);
+  const nextEx = plan.exercises.slice(currentIdx+1).find(e=>!isDone(e.id));
+  if(nextEx){
+    // Show next-exercise card instead of re-opening same detail
+    showNextExerciseBanner(currentExId, nextEx.id);
+  } else {
+    openDetail(currentExId);
+  }
+}
+
+function showNextExerciseBanner(doneExId, nextExId){
+  const doneEx = activePlan().exercises.find(e=>e.id===doneExId);
+  const nextEx = activePlan().exercises.find(e=>e.id===nextExId);
+  // Update buttons on current detail screen
+  const btn = document.getElementById('d-done-btn');
+  const undo = document.getElementById('d-undo-btn');
+  if(btn){ btn.textContent = t('done'); btn.disabled = true; }
+  if(undo){ undo.style.display = 'block'; }
+  // Show next-exercise prompt at the top of sets container
+  const cont = document.getElementById('d-sets');
+  const nextBanner = document.createElement('div');
+  nextBanner.id = 'next-ex-banner';
+  nextBanner.style.cssText = 'background:rgba(200,241,53,.1);border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer';
+  nextBanner.onclick = ()=>openDetail(nextExId);
+  nextBanner.innerHTML = `
+    <div style="flex:1;min-width:0">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:3px">${t('next.exercise')}</div>
+      <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nextEx.icon} ${nextEx.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${nextEx.muscle} · ${metaStr(nextEx)}</div>
+    </div>
+    <div style="color:var(--accent);font-size:22px">›</div>`;
+  // Prepend the banner to sets container
+  cont.prepend(nextBanner);
+}
 function undoExDone(){ unsetDone(currentExId);setSets(currentExId,0);saveState();updateProgress();openDetail(currentExId); }
 
 // ══════════════════════════════════════════════
@@ -1318,7 +1366,8 @@ function openAddGex(){
   document.getElementById('mgex-save-btn').textContent=t('btn.save');
   buildIconPicker('iconPickerGex',ICONS[0],'selectIconGex'); selIconGex=ICONS[0];
   setGexType('reps');
-  ['gex-muscle','gex-name','gex-reps','gex-sets','gex-sitz','gex-kg','gex-pause','gex-dur','gex-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('gex-muscle-wrap').innerHTML = muscleSelectHTML('gex-muscle','');
+  ['gex-name','gex-reps','gex-sets','gex-sitz','gex-kg','gex-pause','gex-dur','gex-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   openModal('modalAddGex');
 }
 
@@ -1330,7 +1379,7 @@ function openEditGex(id){
   selIconGex=gex.icon||ICONS[0];
   buildIconPicker('iconPickerGex',selIconGex,'selectIconGex');
   setGexType(gex.type||'reps');
-  document.getElementById('gex-muscle').value=gex.muscle||'';
+  document.getElementById('gex-muscle-wrap').innerHTML = muscleSelectHTML('gex-muscle', gex.muscle||'');
   document.getElementById('gex-name').value=gex.name||'';
   document.getElementById('gex-reps').value=gex.reps||'';
   document.getElementById('gex-sets').value=gex.sets||3;
@@ -1344,7 +1393,7 @@ function openEditGex(id){
 
 function saveGex(){
   const name=document.getElementById('gex-name').value.trim(); if(!name){alert(t('alert.no-name'));return;}
-  const data={icon:selIconGex,muscle:document.getElementById('gex-muscle').value.trim()||'Allgemein',name,type:gexType,
+  const data={icon:selIconGex,muscle:document.getElementById('gex-muscle').value||'Allgemein',name,type:gexType,
     reps:document.getElementById('gex-reps').value.trim(),sets:parseInt(document.getElementById('gex-sets').value)||3,
     sithoehe:document.getElementById('gex-sitz').value.trim(),kg:document.getElementById('gex-kg').value.trim(),
     pauseSecs:document.getElementById('gex-pause').value===''?null:parseInt(document.getElementById('gex-pause').value),
@@ -1387,7 +1436,7 @@ function pickGex(gexId){
 function openAddCustomEx(){
   pendingGexId=null; editingPlanExId=null;
   closeModal('modalAddPlanEx');
-  openCustomizeExModal({icon:ICONS[0],muscle:'',name:'',type:'reps',reps:'',sets:3,sithoehe:'',kg:'',pauseSecs:null,durationMin:'5-10',note:''},t('btn.add'),true);
+  openCustomizeExModal({icon:ICONS[0],muscle:'',name:'',type:'reps',reps:'',sets:3,sithoehe:'',kg:'',pauseSecs:null,durationMin:'5',note:''},t('btn.add'),true);
 }
 
 function openEditPlanEx(exId){
@@ -1413,7 +1462,7 @@ function openCustomizeExModal(data,btnLabel,isNew){
       </div>
     </div>
     <div class="s-row-2">
-      <div class="s-row"><div class="s-lbl">${t('field.muscle')}</div><input class="s-inp" id="mce-muscle" value="${data.muscle||''}"></div>
+      <div class="s-row"><div class="s-lbl">${t('field.muscle')}</div>${muscleSelectHTML('mce-muscle', data.muscle||'')}</div>
       <div class="s-row"><div class="s-lbl">${t('field.name')}</div><input class="s-inp" id="mce-name" value="${data.name||''}"></div>
     </div>
     <div id="mce-reps-fields" style="${curType==='time'?'display:none':''}">
@@ -1428,7 +1477,7 @@ function openCustomizeExModal(data,btnLabel,isNew){
       <div class="s-row"><div class="s-lbl">${t('field.pause')}</div><input class="s-inp" id="mce-pause" type="number" placeholder="${state.globalPauseSecs}" value="${data.pauseSecs!=null?data.pauseSecs:''}"></div>
     </div>
     <div id="mce-time-fields" style="${curType==='time'?'':'display:none'}">
-      <div class="s-row"><div class="s-lbl">${t('field.duration')}</div><input class="s-inp" id="mce-dur" value="${data.durationMin||'5-10'}"></div>
+      <div class="s-row"><div class="s-lbl">${t('field.duration')}</div><input class="s-inp" id="mce-dur" value="${data.durationMin||'5'}"></div>
     </div>
     <div class="s-row"><div class="s-lbl">${t('field.note')}</div><input class="s-inp" id="mce-note" value="${data.note||''}"></div>
     <div class="s-row"><div class="s-lbl">${t('field.phase')}</div><select class="s-inp" id="mce-phase">${phaseOpts}</select></div>`;
@@ -1446,7 +1495,7 @@ function savePlanEx(){
   const isTime=document.getElementById('mce-tt-time').classList.contains('active');
   const data={
     gexId:pendingGexId||null, icon:selIconPlanEx,
-    muscle:document.getElementById('mce-muscle').value.trim()||'Allgemein',
+    muscle:document.getElementById('mce-muscle').value||'Allgemein',
     name:document.getElementById('mce-name').value.trim()||t('field.name'),
     type:isTime?'time':'reps',
     reps:document.getElementById('mce-reps')?document.getElementById('mce-reps').value.trim():'',
