@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GymApp">
-<title>GymApp</title>
+<meta name="apple-mobile-web-app-title" content="GoTrain">
+<title>GoTrain</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d0f'/><text x='256' y='375' font-family='Georgia,serif' font-size='380' font-weight='700' fill='%23c8f135' text-anchor='middle'>G</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d0f'/><text x='256' y='375' font-family='Georgia,serif' font-size='380' font-weight='700' fill='%23c8f135' text-anchor='middle'>G</text></svg>">
 <style>
@@ -242,7 +242,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 <div class="header">
   <div class="header-top">
-    <div><h1 id="h-plan-name">GYMAPP</h1><p id="h-sub">fair fitness</p></div>
+    <div><h1 id="h-plan-name">GOTRAIN</h1><p id="h-sub"></p></div>
     <div class="prw">
       <svg width="46" height="46" viewBox="0 0 46 46">
         <circle class="pr-bg" cx="23" cy="23" r="19"/>
@@ -259,12 +259,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="detail-header">
     <button class="back-btn" onclick="goBack()">‹</button>
     <div style="flex:1;min-width:0"><div class="detail-title" id="d-name"></div><div class="detail-sub" id="d-muscle"></div></div>
-    <button class="back-btn" id="d-abort-btn" onclick="abortWorkout()" style="background:transparent;border-color:#3a3a45;color:var(--danger);font-size:13px;font-weight:600;width:auto;padding:0 10px;white-space:nowrap">✕ Stop</button>
   </div>
   <div class="info-grid" id="d-info"></div>
   <div class="note-box" id="d-note" style="display:none"></div>
   <div class="sec-label" id="lbl-sets-timer">SÄTZE / TIMER</div>
   <div id="d-sets"></div>
+  <div id="next-ex-slot"></div>
   <button class="btn-primary" id="d-done-btn" onclick="markExDone()"></button>
   <button class="btn-secondary" id="d-undo-btn" onclick="undoExDone()" style="display:none"></button>
 </div>
@@ -290,10 +290,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="g-row">
         <div><div class="g-lbl" data-i="gs.pause.lbl"></div><div class="g-sub" data-i="gs.pause.sub"></div></div>
         <input class="g-val" id="gs-pause" type="number" min="10" max="300" onblur="saveGlobal('pauseSecs',this.value)">
-      </div>
-      <div class="g-row">
-        <div><div class="g-lbl" data-i="gs.trainer.lbl"></div><div class="g-sub" data-i="gs.trainer.sub"></div></div>
-        <input class="g-val wide" id="gs-trainer" type="text" onblur="saveGlobal('trainer',this.value)">
       </div>
       <div class="g-row">
         <div><div class="g-lbl" data-i="gs.lang.lbl"></div><div class="g-sub" data-i="gs.lang.sub"></div></div>
@@ -658,7 +654,7 @@ function defaultPlan(){
 
 function defaultState(){
   const plan=defaultPlan();
-  return { globalPauseSecs:75, trainer:'Levin', lang:'de', activePlanId:plan.id,
+  return { globalPauseSecs:75, lang:'de', activePlanId:plan.id,
     plans:[plan], globalExercises:[], progress:{}, history:[] };
 }
 
@@ -708,8 +704,8 @@ function applyTranslations(){
   if(secLabels[2]) secLabels[2].textContent = t('section.workout');
   document.getElementById('gs-lang').value = lang;
   document.getElementById('hd-ex-label').textContent = t('history.detail.exercises');
-  document.getElementById('h-plan-name').textContent = 'GYMAPP';
-  document.getElementById('h-sub').textContent = 'fair fitness · Trainer: '+state.trainer;
+  document.getElementById('h-plan-name').textContent = 'GOTRAIN';
+  document.getElementById('h-sub').textContent = '';
 }
 
 function changeLang(l){
@@ -769,15 +765,15 @@ function showSettingsTab(tab){
   document.getElementById('stab-'+tab)?.classList.add('active');
   if(tab==='plans') renderPlansList();
   if(tab==='globalex') renderGexList();
-  if(tab==='general'){ document.getElementById('gs-pause').value=state.globalPauseSecs; document.getElementById('gs-trainer').value=state.trainer; document.getElementById('gs-lang').value=lang; }
+  if(tab==='general'){ document.getElementById('gs-pause').value=state.globalPauseSecs; document.getElementById('gs-lang').value=lang; }
 }
 
 // ══════════════════════════════════════════════
 // HEADER HELPERS
 // ══════════════════════════════════════════════
 function updateHeader(){
-  document.getElementById('h-plan-name').textContent = 'GYMAPP';
-  document.getElementById('h-sub').textContent = 'fair fitness · Trainer: '+state.trainer;
+  document.getElementById('h-plan-name').textContent = 'GOTRAIN';
+  document.getElementById('h-sub').textContent = '';
 }
 
 function setWorkoutHeader(planName){
@@ -957,6 +953,9 @@ function openDetail(exId){
   const noteEl=document.getElementById('d-note');
   if(ex.note){noteEl.textContent='⚙️  '+ex.note;noteEl.style.display='block';}else noteEl.style.display='none';
   renderSetRows(ex);
+  // Clear any previous next-exercise banner
+  const slot = document.getElementById('next-ex-slot');
+  if(slot) slot.innerHTML = '';
   const btn=document.getElementById('d-done-btn'), undo=document.getElementById('d-undo-btn');
   if(isDone(exId)){btn.textContent=t('done');btn.disabled=true;undo.style.display='block';}
   else{btn.textContent=t('complete');btn.disabled=false;undo.style.display='none';}
@@ -1022,7 +1021,13 @@ function renderSetRows(ex){
   }
 }
 
-function completeTimeEx(){ if(isDone(currentExId))return; setDone(currentExId);setSets(currentExId,1);saveState();updateProgress();openDetail(currentExId); }
+function completeTimeEx(){
+  if(isDone(currentExId)) return;
+  setDone(currentExId); setSets(currentExId,1); saveState(); updateProgress();
+  const nextEx = findNextExercise(currentExId);
+  openDetail(currentExId);
+  if(nextEx) showNextExerciseBanner(nextEx.id);
+}
 function completeSet(exId,setNum){
   if(setNum!==getSets(exId)+1)return;
   swStopAll(); setSets(exId,setNum); saveState();
@@ -1035,46 +1040,71 @@ function completeSet(exId,setNum){
     if(!isLocked&&!iDone){ const ii=i; row.querySelector('.sr-left').onclick=()=>completeSet(exId,ii); row.querySelector('.chk').onclick=()=>completeSet(exId,ii); }
   }
   updateProgress();
-  if(setNum<ex.sets){ document.getElementById('tovNext').innerHTML=`${t('set')} <strong>${setNum+1}/${ex.sets}</strong>`; startPauseTimer(pauseFor(ex)); }
+  if(setNum<ex.sets){
+    document.getElementById('tovNext').innerHTML=`${t('set')} <strong>${setNum+1}/${ex.sets}</strong>`;
+    startPauseTimer(pauseFor(ex));
+  } else {
+    // Last set done – auto-mark exercise as done
+    setDone(exId); saveState(); updateProgress();
+    // Update done button state
+    const btn=document.getElementById('d-done-btn'), undo=document.getElementById('d-undo-btn');
+    if(btn){btn.textContent=t('done');btn.disabled=true;}
+    if(undo)undo.style.display='block';
+    // Show next exercise banner (follows phase display order)
+    const nextEx=findNextExercise(exId);
+    if(nextEx) showNextExerciseBanner(nextEx.id);
+  }
 }
 function markExDone(){
   setDone(currentExId); saveState(); updateProgress();
-  // Find next undone exercise in the current plan
-  const plan = activePlan();
-  const allIds = plan.exercises.map(e=>e.id);
-  const currentIdx = allIds.indexOf(currentExId);
-  const nextEx = plan.exercises.slice(currentIdx+1).find(e=>!isDone(e.id));
-  if(nextEx){
-    // Show next-exercise card instead of re-opening same detail
-    showNextExerciseBanner(currentExId, nextEx.id);
-  } else {
-    openDetail(currentExId);
-  }
+  const nextEx = findNextExercise(currentExId);
+  // Re-render detail to update done button state
+  openDetail(currentExId);
+  // Then show next banner if there is one
+  if(nextEx) showNextExerciseBanner(nextEx.id);
 }
 
-function showNextExerciseBanner(doneExId, nextExId){
-  const doneEx = activePlan().exercises.find(e=>e.id===doneExId);
-  const nextEx = activePlan().exercises.find(e=>e.id===nextExId);
-  // Update buttons on current detail screen
-  const btn = document.getElementById('d-done-btn');
-  const undo = document.getElementById('d-undo-btn');
-  if(btn){ btn.textContent = t('done'); btn.disabled = true; }
-  if(undo){ undo.style.display = 'block'; }
-  // Show next-exercise prompt at the top of sets container
-  const cont = document.getElementById('d-sets');
-  const nextBanner = document.createElement('div');
-  nextBanner.id = 'next-ex-banner';
-  nextBanner.style.cssText = 'background:rgba(200,241,53,.1);border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer';
-  nextBanner.onclick = ()=>openDetail(nextExId);
-  nextBanner.innerHTML = `
+// Returns exercises in display order: phase by phase, then unphased
+function exercisesInDisplayOrder(plan){
+  const ordered = [];
+  plan.phases.forEach(phase=>{
+    plan.exercises.filter(e=>e.phaseId===phase.id).forEach(e=>ordered.push(e));
+  });
+  plan.exercises.filter(e=>!e.phaseId||!plan.phases.find(ph=>ph.id===e.phaseId)).forEach(e=>ordered.push(e));
+  return ordered;
+}
+
+function findNextExercise(currentExId){
+  const plan = activePlan();
+  const ordered = exercisesInDisplayOrder(plan);
+  const currentIdx = ordered.findIndex(e=>e.id===currentExId);
+  return ordered.slice(currentIdx+1).find(e=>!isDone(e.id)) || null;
+}
+function showNextExerciseBanner(nextExId){
+  const plan = activePlan();
+  const nextEx = plan.exercises.find(e=>e.id===nextExId);
+  if(!nextEx) return;
+  const slot = document.getElementById('next-ex-slot');
+  if(!slot) return;
+
+  // Show phase name if next exercise is in a different phase
+  const currentEx = plan.exercises.find(e=>e.id===currentExId);
+  const currentPhase = currentEx ? plan.phases.find(ph=>ph.id===currentEx.phaseId) : null;
+  const nextPhase = plan.phases.find(ph=>ph.id===nextEx.phaseId);
+  const isDifferentPhase = nextPhase && (!currentPhase || currentPhase.id !== nextPhase.id);
+  const phaseLabel = isDifferentPhase
+    ? `<div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">📍 ${nextPhase.name}</div>`
+    : '';
+
+  slot.innerHTML = `<div style="background:rgba(200,241,53,.1);border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin-top:12px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="openDetail('${nextExId}')">
     <div style="flex:1;min-width:0">
       <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:3px">${t('next.exercise')}</div>
+      ${phaseLabel}
       <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nextEx.icon} ${nextEx.name}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">${nextEx.muscle} · ${metaStr(nextEx)}</div>
     </div>
-    <div style="color:var(--accent);font-size:22px">›</div>`;
-  // Prepend the banner to sets container
-  cont.prepend(nextBanner);
+    <div style="color:var(--accent);font-size:22px;flex-shrink:0">›</div>
+  </div>`;
 }
 function undoExDone(){ unsetDone(currentExId);setSets(currentExId,0);saveState();updateProgress();openDetail(currentExId); }
 
@@ -1137,7 +1167,6 @@ function skipTimer(){ clearInterval(pauseInt);document.getElementById('timerOver
 function renderSettings(){ showSettingsTab('plans'); }
 function saveGlobal(key,val){
   if(key==='pauseSecs') state.globalPauseSecs=parseInt(val)||75;
-  if(key==='trainer') state.trainer=val;
   saveState(); updateHeader();
 }
 
