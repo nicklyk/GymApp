@@ -36,15 +36,6 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "GoTrain Startbildschirm"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Training starten",
@@ -57,6 +48,36 @@
           "sizes": "192x192"
         }
       ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-1.png",
+      "sizes": "1206x2622",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GoTrain – Startbildschirm"
+    },
+    {
+      "src": "screenshot-2.png",
+      "sizes": "1206x2622",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GoTrain – Trainingsplan bearbeiten"
+    },
+    {
+      "src": "screenshot-3.png",
+      "sizes": "1206x2622",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GoTrain – Trainings-Verlauf"
+    },
+    {
+      "src": "screenshot-4.png",
+      "sizes": "1206x2622",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GoTrain – Training pausiert"
     }
   ]
 }
