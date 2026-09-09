@@ -308,7 +308,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-hei
   </div>
   <div id="stab-plans" class="sub-screen active">
     <div id="plans-list"></div>
-    <button class="btn-outline" id="btn-new-plan" onclick="openModal('modalAddPlan')"></button>
+    <button class="btn-outline" id="btn-new-plan" onclick="openAddPlan()"></button>
   </div>
   <div id="stab-globalex" class="sub-screen">
     <p style="font-size:13px;color:var(--muted);margin-bottom:14px" id="gex-desc"></p>
@@ -601,6 +601,8 @@ const T = {
     'btn.plan-empty':'Leeren Plan erstellen','btn.plan-copy':'Plan kopieren',
     'modal.copy-source':'WELCHEN PLAN KOPIEREN?','modal.copy-source.sub':'Wähle den Plan der kopiert werden soll:',
     'workout.home.title':'BEREIT ZUM TRAINIEREN','workout.home.sub':'Wähle einen Plan und starte dein Workout.',
+    'workout.noplan.title':'NOCH KEIN PLAN','workout.noplan.sub':'Lege deinen ersten Trainingsplan an, dann kann es losgehen.',
+    'workout.noplan.cta':'ERSTEN PLAN ANLEGEN',
     'workout.home.title.active':'TRAINING PAUSIERT','workout.home.sub.active':'Du hast ein Training begonnen. Möchtest du weitermachen?',
     'workout.start':'TRAINING STARTEN','workout.select.title':'PLAN AUSWÄHLEN','workout.select.sub':'Mit welchem Plan möchtest du trainieren?',
     'workout.active-plan':'Aktiver Plan','workout.continue':'WEITER MIT DIESEM PLAN',
@@ -677,6 +679,8 @@ const T = {
     'btn.plan-empty':'Create empty plan','btn.plan-copy':'Copy a plan',
     'modal.copy-source':'WHICH PLAN TO COPY?','modal.copy-source.sub':'Select the plan you want to copy:',
     'workout.home.title':'READY TO TRAIN','workout.home.sub':'Choose a plan and start your workout.',
+    'workout.noplan.title':'NO PLAN YET','workout.noplan.sub':'Create your first training plan and you are ready to go.',
+    'workout.noplan.cta':'CREATE YOUR FIRST PLAN',
     'workout.home.title.active':'WORKOUT PAUSED','workout.home.sub.active':'You have a workout in progress. Want to continue?',
     'workout.start':'START WORKOUT','workout.select.title':'SELECT PLAN','workout.select.sub':'Which plan do you want to train with?',
     'workout.active-plan':'Active plan','workout.continue':'CONTINUE WITH THIS PLAN',
@@ -713,29 +717,12 @@ function muscleSelectHTML(id, currentVal){
 // ══════════════════════════════════════════════
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
-function defaultPlan(){
-  const p1=uid(), p2=uid();
-  return { id:uid(), name:'Mein Plan',
-    phases:[{id:p1,name:'Warm Up',colorIdx:0},{id:p2,name:'Kraft',colorIdx:1}],
-    exercises:[
-      {id:uid(),icon:'🏃',muscle:'Cardio',name:'Laufband',type:'time',durationMin:'5',sets:1,reps:'',sithoehe:'',kg:'',pauseSecs:null,note:'',phaseId:p1},
-      {id:uid(),icon:'🦵',muscle:'Beine',name:'Leg Press',type:'reps',reps:'8-12',sets:3,sithoehe:'3',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'🦵',muscle:'Beine',name:'Prone Leg Curl',type:'reps',reps:'8-12',sets:3,sithoehe:'',kg:'',pauseSecs:null,note:'Hebel 1 · Fuß 4',phaseId:p2},
-      {id:uid(),icon:'🔙',muscle:'Rücken',name:'Lat Zug',type:'reps',reps:'8-12',sets:3,sithoehe:'2',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'🔙',muscle:'Rücken',name:'Low Row',type:'reps',reps:'8-12',sets:4,sithoehe:'8',kg:'',pauseSecs:null,note:'Brust 9',phaseId:p2},
-      {id:uid(),icon:'🫁',muscle:'Brust',name:'Chest Press',type:'reps',reps:'8-12',sets:4,sithoehe:'8',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'💪',muscle:'Schulter',name:'Shoulder Press',type:'reps',reps:'8-12',sets:4,sithoehe:'7',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'💪',muscle:'Bizeps',name:'Arm Curl',type:'reps',reps:'8-12',sets:4,sithoehe:'7',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'💪',muscle:'Trizeps',name:'Arm Extension',type:'reps',reps:'8-12',sets:4,sithoehe:'7',kg:'',pauseSecs:null,note:'',phaseId:p2},
-      {id:uid(),icon:'🔥',muscle:'Bauch',name:'Abd. Crunches',type:'reps',reps:'8-12',sets:4,sithoehe:'',kg:'',pauseSecs:null,note:'',phaseId:p2}
-    ]
-  };
-}
-
 function defaultState(){
-  const plan=defaultPlan();
-  return { globalPauseSecs:75, lang:'en', activePlanId:plan.id,
-    plans:[plan], globalExercises:[], progress:{}, history:[] };
+  // No preset plan: a new install starts empty and the user builds their own.
+  // Shipping a sample plan meant every stranger found someone else's
+  // exercises, weights and machine settings waiting for them.
+  return { globalPauseSecs:75, lang:'en', activePlanId:null,
+    plans:[], globalExercises:[], progress:{}, history:[] };
 }
 
 function loadState(){
@@ -816,7 +803,10 @@ function changeLang(l){
 // ══════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════
+// May return undefined: a fresh install has no plans until the user makes one.
+// Every caller that can run before that must check.
 function activePlan(){ return state.plans.find(p=>p.id===state.activePlanId)||state.plans[0]; }
+function hasPlan(){ return !!activePlan(); }
 function getPlanById(id){ return state.plans.find(p=>p.id===id); }
 function getEx(exId){ return activePlan().exercises.find(e=>e.id===exId); }
 function getProg(planId){ if(!state.progress[planId]) state.progress[planId]={completedSets:{},doneExercises:[]}; return state.progress[planId]; }
@@ -897,6 +887,7 @@ function renderWorkout(){
 }
 
 function renderWorkoutHome(){
+  if(!hasPlan()){ renderNoPlan(); return; }
   const prog = getProg(state.activePlanId);
   const hasProgress = prog.doneExercises.length > 0 || Object.values(prog.completedSets).some(v=>v>0);
   const plan = activePlan();
@@ -927,6 +918,19 @@ function renderWorkoutHome(){
         <div class="workout-home-sub" style="margin:8px auto 0">${homeSub}</div>
       </div>
       <button class="btn-primary" style="max-width:300px" onclick="openPlanSelectModal()">${hasProgress ? t('workout.end.new') : t('workout.start')}</button>
+    </div>`;
+  updateProgress();
+}
+
+function renderNoPlan(){
+  document.getElementById('workout-content').innerHTML=`
+    <div class="workout-home">
+      <div>
+        <div class="workout-home-icon">\u{1F4CB}</div>
+        <div class="workout-home-title">${t('workout.noplan.title')}</div>
+        <div class="workout-home-sub" style="margin:8px auto 0">${t('workout.noplan.sub')}</div>
+      </div>
+      <button class="btn-primary" style="max-width:300px" onclick="openAddPlan()">${t('workout.noplan.cta')}</button>
     </div>`;
   updateProgress();
 }
@@ -1015,7 +1019,13 @@ function exItemHTML(ex){
 }
 
 function updateProgress(){
-  const plan=activePlan(), total=plan.exercises.length, done=getProg(state.activePlanId).doneExercises.length;
+  const plan=activePlan();
+  if(!plan){
+    document.getElementById('prBar').style.strokeDashoffset=119.38;
+    document.getElementById('prTxt').textContent='0%';
+    return;
+  }
+  const total=plan.exercises.length, done=getProg(state.activePlanId).doneExercises.length;
   const pct=total?Math.round(done/total*100):0, circ=119.38;
   document.getElementById('prBar').style.strokeDashoffset=circ-(circ*pct/100);
   document.getElementById('prTxt').textContent=pct+'%';
@@ -1670,6 +1680,12 @@ function createPlan(mode, sourcePlanId){
   renderWorkout();
 }
 
+function openAddPlan(){
+  const copyBtn=document.getElementById('btn-plan-copy');
+  if(copyBtn) copyBtn.style.display = state.plans.length ? '' : 'none';
+  openModal('modalAddPlan');
+}
+
 function openCopySourceModal(){
   // Only show if there are plans to copy from
   if(state.plans.length === 0){ createPlan('empty'); return; }
@@ -1710,7 +1726,7 @@ function importData(event){
   reader.onload=e=>{
     try{
       const imported=JSON.parse(e.target.result);
-      if(!imported.plans||!imported.activePlanId) throw new Error('invalid');
+      if(!Array.isArray(imported.plans)||!('activePlanId' in imported)) throw new Error('invalid');
       Object.assign(state,imported);
       lang=state.lang||'en';
       saveState(); location.reload();
@@ -1918,7 +1934,9 @@ function saveHistory(){
 
 function renderHistory(){
   const cont=document.getElementById('history-content');
-  const prog=getProg(state.activePlanId), allDone=prog.doneExercises.length===activePlan().exercises.length&&activePlan().exercises.length>0;
+  const plan=activePlan();
+  const prog=plan?getProg(state.activePlanId):{doneExercises:[],completedSets:{}};
+  const allDone=!!plan&&plan.exercises.length>0&&prog.doneExercises.length===plan.exercises.length;
   let h='';
   if(allDone) h+=`<div class="congrats"><div class="big">🏆</div><h2>${t('congrats.title')}</h2><p>${t('congrats.sub')}</p></div>`;
   if(!state.history.length&&!allDone){cont.innerHTML=h+`<div class="empty-state"><div class="big">📋</div>${t('no-history')}</div>`;return;}
