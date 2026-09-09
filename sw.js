@@ -1,16 +1,33 @@
+/*
+GoTrain - a personal workout tracker
+Copyright (C) 2026 Nikolaos Lykouresis
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 // GoTrain Service Worker
-const CACHE_NAME = 'gotrain-v2';
+const CACHE_NAME = 'gotrain-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './fonts/bebas-neue-latin.woff2',
+  './fonts/bebas-neue-latin-ext.woff2',
+  './fonts/dm-sans-latin.woff2',
+  './fonts/dm-sans-latin-ext.woff2'
 ];
-
-// Cross-origin hosts we still want cached for offline use. Everything else
-// cross-origin is passed straight through to the network, untouched.
-const FONT_HOSTS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 
 // Resolved once so shell matching is an exact pathname comparison. The old
 // `ASSETS.some(a => url.pathname.endsWith(a.replace('./', '')))` test matched
@@ -47,13 +64,15 @@ self.addEventListener('fetch', event => {
   // intercepting that would turn a network failure into a bogus success.
   if (req.method !== 'GET') return;
 
+  // Nothing cross-origin is ours to answer -- the app makes no third-party
+  // requests at all now that the fonts are self-hosted. Intercepting a foreign
+  // origin would turn a network failure into a bogus success.
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
-
-  if (!sameOrigin && !FONT_HOSTS.includes(url.origin)) return;
+  if (!sameOrigin) return;
 
   // App shell: cache-first, falling back to index.html only for navigations.
-  if (sameOrigin && SHELL_PATHS.has(url.pathname)) {
+  if (SHELL_PATHS.has(url.pathname)) {
     event.respondWith(
       caches.match(req).then(cached => {
         if (cached) return cached;
@@ -72,7 +91,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Fonts and other same-origin assets: network with cache fallback.
+  // Other same-origin assets: network with cache fallback.
   event.respondWith(
     fetch(req).then(resp => {
       if (resp && resp.status === 200 && resp.type !== 'opaque') {

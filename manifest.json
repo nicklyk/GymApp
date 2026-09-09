@@ -1,14 +1,14 @@
 {
   "name": "GoTrain",
   "short_name": "GoTrain",
-  "description": "Dein persönlicher Workout-Tracker – Pläne, Übungen und Verlauf in einer App.",
+  "description": "Your personal workout tracker — plans, exercises and history in one offline app.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0d0d0f",
   "theme_color": "#c8f135",
   "orientation": "portrait-primary",
-  "lang": "de",
+  "lang": "en",
   "id": "gotrain-app",
   "categories": [
     "health",
@@ -38,9 +38,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Training starten",
-      "short_name": "Training",
-      "description": "Neues Workout starten",
+      "name": "Start workout",
+      "short_name": "Workout",
+      "description": "Start a new workout",
       "url": "./index.html",
       "icons": [
         {
@@ -56,28 +56,28 @@
       "sizes": "1206x2622",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GoTrain – Startbildschirm"
+      "label": "GoTrain — home screen"
     },
     {
       "src": "screenshot-2.png",
       "sizes": "1206x2622",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GoTrain – Trainingsplan bearbeiten"
+      "label": "GoTrain — editing a plan"
     },
     {
       "src": "screenshot-3.png",
       "sizes": "1206x2622",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GoTrain – Trainings-Verlauf"
+      "label": "GoTrain — workout history"
     },
     {
       "src": "screenshot-4.png",
       "sizes": "1206x2622",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GoTrain – Training pausiert"
+      "label": "GoTrain — workout paused"
     }
   ]
 }

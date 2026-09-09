@@ -1,53 +1,158 @@
 # 🏋️ GoTrain
 
-A mobile-first workout tracker built as a PWA (Progressive Web App). No installation, no account, no server required. Designed for iPhone Safari and fully installable as a standalone home screen app.
+A workout tracker that runs entirely in your browser. No account, no server, no
+tracking, no third-party requests — your training data never leaves your device
+unless you choose to move it.
+
+**[Try the demo →](https://niclick.org/GoTrain)** · Free software (GPL-3.0-or-later)
+
+| | | | |
+|---|---|---|---|
+| <img src="screenshot-1.png" width="180" alt="Home screen"> | <img src="screenshot-2.png" width="180" alt="Editing a plan"> | <img src="screenshot-3.png" width="180" alt="Workout history"> | <img src="screenshot-4.png" width="180" alt="Workout paused"> |
 
 ## Features
 
-- **Multiple training plans** — create, copy, edit, rename and delete plans
-- **Phases** — organize exercises into color-coded phases (e.g. Warm Up, Strength, Cool Down)
-- **Exercise library** — define global exercises with muscle group dropdown and reuse them across plans
-- **Two exercise types** — sets/reps or time-based (with countdown timer)
-- **Live workout tracking** — check off sets, rest timer between sets, stopwatch per set
-- **Next exercise banner** — automatically suggests the next exercise after completing one, including across phases
-- **Workout history** — every finished workout is saved with full exercise details (sets, reps, completion status)
-- **Abort or finish** — end a workout and save it to history, or abort without saving
-- **Export & Import** — back up all data as a `.json` file and restore anytime
-- **German & English** — switch language in settings
-- **Offline support** — Service Worker caches the app for full offline use
-- **PWA ready** — installable via Safari "Add to Home Screen", with custom icon and manifest
+- **Training plans** — create, copy, rename and delete as many as you like
+- **Phases** — group exercises into colour-coded blocks (Warm Up, Strength, Cool Down…)
+- **Exercise library** — define exercises once with a muscle group and reuse them
+- **Reps or time** — sets and reps, or a countdown for timed exercises
+- **Live tracking** — tick off sets, rest timer between sets, stopwatch per set
+- **History** — every finished session is saved with its full exercise detail
+- **Progress** — the weight you set per exercise is kept with each session, so
+  your load over time is recorded, not just that you turned up
+- **Send to PC** — hand your data to a desktop over the local network, either
+  through the share sheet or by scanning a pairing code
+- **Export / import** — a plain `.json` file you own
+- **English & German** — switch in Settings
+- **Works offline** — everything is cached on first visit, including the fonts
+- **Installable** — add it to your home screen and it runs fullscreen
 
-## Installation (iPhone)
+## Install on your phone
 
-1. Open the app URL in **Safari**
-2. Tap the share icon → **"Add to Home Screen"**
-3. The app opens fullscreen like a native app — no address bar, no browser chrome
+**iPhone (Safari):** open the site → Share → **Add to Home Screen**.
 
-## Files
+**Android (Chrome):** open the site → menu → **Install app**.
 
-| File | Description |
+It then launches fullscreen with no browser chrome, and works with no
+connection.
+
+> On iOS, a home-screen app and Safari keep **separate** storage. If you install
+> to the home screen, use that copy — the same site opened in Safari has its own,
+> independent data.
+
+## Hosting it yourself
+
+GoTrain is a handful of static files. There is no build step, no package
+manager, no server-side code and no database — any web server or static host
+will do.
+
+### 1. Get the files
+
+```bash
+git clone https://github.com/nicklyk/GoTrain.git
+```
+
+Everything must stay in the same directory, and all paths are relative, so a
+subdirectory (`example.com/gotrain/`) works exactly as well as a domain root.
+
+| File | Purpose |
 |---|---|
-| `index.html` | The complete app (HTML, CSS, JS in one file) |
-| `manifest.json` | PWA manifest for app store submission |
-| `sw.js` | Service Worker for offline caching |
-| `icon-192.png` | App icon 192×192px |
-| `icon-512.png` | App icon 512×512px |
+| `index.html` | The whole app — markup, styles and logic in one file |
+| `sw.js` | Service worker; caches the app for offline use |
+| `manifest.json` | Makes it installable as an app |
+| `icon-192.png`, `icon-512.png` | App icons |
+| `fonts/` | Self-hosted webfonts (see *Privacy*) |
+| `screenshot-*.png` | Shown in the install prompt on Android |
 
-All files must be in the same directory for the PWA to work correctly.
+### 2. Serve it over HTTPS
 
-## Data Storage
+**This is the one hard requirement.** Service workers, home-screen install and
+the camera used by the QR pairing all need a *secure context*. Over plain HTTP
+the app still loads, but it will not work offline, cannot be installed, and
+cannot scan a pairing code.
 
-All data (plans, exercises, history, settings) is saved automatically in the browser's `localStorage`. Use **Export** in Settings → General to save a backup `.json` file, and **Import** to restore it.
+`http://localhost` is exempt, which is why local testing works without a
+certificate:
 
-## App Store Submission
+```bash
+cd GoTrain
+python3 -m http.server 8000
+# open http://localhost:8000
+```
 
-This app is PWA-ready for submission via [PWABuilder](https://pwabuilder.com):
+### 3. Pick a host
 
-1. Host all files on GitHub Pages
-2. Enter your URL at pwabuilder.com
-3. Download the generated iOS package
-4. Submit via App Store Connect (requires Apple Developer Account, $99/year)
+**GitHub Pages** (free, HTTPS included):
 
-## Tech
+1. Push the files to a repository
+2. **Settings → Pages → Source: Deploy from a branch**, pick `main` and `/ (root)`
+3. Your copy appears at `https://<user>.github.io/<repo>/` within a minute
 
-Plain HTML, CSS and JavaScript — no frameworks, no build tools, no dependencies. Everything lives in a single `index.html` file (~1700 lines).
+**Any other web server** — copy the directory into the document root. Nothing
+needs configuring; there is no runtime, no environment and nothing to
+provision. One optional nicety is to serve `sw.js` with
+`Cache-Control: no-cache` so updates are noticed promptly.
+
+### 4. Publishing changes
+
+The service worker serves the app from cache first, so **bump `CACHE_NAME` in
+`sw.js`** whenever you change `index.html`. Without that, returning visitors
+keep the old version indefinitely.
+
+Even with the bump, an installed app usually shows the new version on the
+*second* launch: the first one installs the new worker, the next one serves the
+new page.
+
+## Your data
+
+Everything lives in your browser's `localStorage`, under the origin you loaded
+the app from. It is never uploaded — there is nowhere to upload it *to*.
+
+That has two consequences worth understanding:
+
+- **Clearing site data deletes your history.** Use **Settings → Data → Export**
+  to keep a backup, and **Import** to restore it.
+- **Hosting a copy gives you no access to anyone's data**, including your own on
+  another device. Each origin, browser and device is a separate store.
+
+## Privacy
+
+The app makes **no third-party requests at all** — no analytics, no CDN, no
+fonts fetched from elsewhere. Load it once and you can put your phone in
+aeroplane mode forever.
+
+The webfonts are bundled in `fonts/` rather than loaded from Google Fonts. That
+keeps the app self-contained and offline on first load, and avoids handing every
+visitor's IP address to a third party — which the Munich Regional Court found
+to be a GDPR violation (LG München I, judgment of 20 January 2022, case
+3 O 17493/20).
+
+## Desktop companion
+
+[**omarchy-gotrain**](https://github.com/nicklyk/omarchy-gotrain) brings your
+workouts onto an [Omarchy](https://omarchy.org) desktop: a bar widget, recent
+sessions, strength progression and a local archive that outlives any phone
+reset. It is optional — GoTrain is complete on its own.
+
+## Development
+
+Open `index.html` in a browser. That is the entire toolchain.
+
+It is deliberately one file of plain HTML, CSS and JavaScript with no framework
+and no build step, so it stays readable and will still run in ten years. The
+only bundled dependency is a QR decoder, inlined so the app keeps working
+offline.
+
+## Licence
+
+GPL-3.0-or-later — see [LICENSE](LICENSE).
+
+GoTrain is free software: you may use, study, change and share it, and anyone
+you give a modified copy to gets those same freedoms.
+
+Bundled third-party components, under their own licences:
+
+| Component | Licence |
+|---|---|
+| [jsQR](https://github.com/cozmo/jsQR) (inlined in `index.html`) | Apache-2.0 |
+| Bebas Neue, DM Sans (`fonts/`) | SIL Open Font License 1.1 — see [`fonts/OFL.txt`](fonts/OFL.txt) |
